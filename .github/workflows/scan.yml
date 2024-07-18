@@ -1,0 +1,75 @@
+name: Endor Labs Security Pipeline For Pull Requests
+
+on:
+  pull_request:
+    branches: [ add-endor-scan ]
+  push:
+    branches: [ add-endor-scan ]
+
+jobs:
+  security-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Endor Labs Tools Approval
+        uses: endorlabs/github-action@main
+        with:
+          namespace: ${{ secrets.NAMESPACE }}
+          api: "https://api.endorlabs.com"
+          pr: true
+          enable_pr_comments: true
+          enable_github_action_token: true
+          scan_tools: true
+          scan_summary_output_type: table
+          
+      - name: Endor Labs Secrets Scanning 
+        uses: endorlabs/github-action@main
+        with:
+          namespace: ${{ secrets.NAMESPACE }}
+          api: "https://api.endorlabs.com"
+          pr: true
+          enable_pr_comments: true
+          enable_github_action_token: true
+          scan_dependencies: false
+          scan_secrets: true
+          scan_git_logs: true
+          scan_summary_output_type: table
+        
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      # - name: Install dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip
+      #     pip install -r requirements.txt
+
+      - name: Endor Labs SCA Security
+        uses: endorlabs/github-action@main
+        with:
+          namespace: ${{ secrets.NAMESPACE }}
+          api: "https://api.endorlabs.com"
+          pr: true
+          enable_pr_comments: true
+          enable_github_action_token: true
+          scan_dependencies: true
+          scan_summary_output_type: table
+
+      - name: Endor Labs Github Actions Security
+        uses: endorlabs/github-action@main
+        with:
+          namespace: ${{ secrets.NAMESPACE }}
+          api: "https://api.endorlabs.com"
+          pr: true
+          enable_pr_comments: true
+          enable_github_action_token: true
+          scan_dependencies: false
+          scan_github_actions: true
+          scan_summary_output_type: table
